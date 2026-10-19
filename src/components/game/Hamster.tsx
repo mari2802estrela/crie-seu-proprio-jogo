@@ -2,7 +2,7 @@ import hamsterImg from "@/assets/hamster.png";
 
 export type Mood = "idle" | "happy" | "sad" | "think" | "point" | "dance" | "sleep" | "sign";
 
-export function Hamster({ mood, speech, size = "sm" }: { mood: Mood; speech?: string; size?: "sm" | "lg" }) {
+export function Hamster({ mood, speech, size = "sm" }: { mood: Mood; speech?: string | undefined; size?: "sm" | "lg" }) {
   const dim = size === "lg" ? "w-56 sm:w-72" : "w-24 sm:w-36";
   const cls = mood === "sign" ? "h-think" : `h-${mood}`;
   return (

@@ -18,7 +18,7 @@ const COLORS = ["var(--gold)", "var(--mystic)", "var(--success)", "var(--cream)"
 export function Confetti({ count = 80 }: { count?: number }) {
   const [bits, setBits] = useState<{ l: number; d: number; delay: number; c: string; r: boolean }[]>([]);
   useEffect(() => {
-    setBits(Array.from({ length: count }, () => ({ l: Math.random() * 100, d: 2.5 + Math.random() * 3, delay: Math.random() * 1.5, c: COLORS[Math.floor(Math.random() * COLORS.length)], r: Math.random() > 0.5 })));
+    setBits(Array.from({ length: count }, () => ({ l: Math.random() * 100, d: 2.5 + Math.random() * 3, delay: Math.random() * 1.5, c: COLORS[Math.floor(Math.random() * COLORS.length)]!, r: Math.random() > 0.5 })));
   }, [count]);
   return (
     <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden">
