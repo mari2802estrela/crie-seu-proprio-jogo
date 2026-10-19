@@ -194,9 +194,9 @@ export const PHASES: Phase[] = [
       },
       {
         q: "Qual destes países possui uma fronteira terrestre com a China e também com o Laos?",
-        options: ["Myanmar", "Vietnã", "Tailândia", "Camboja", "Malásia"],
+        options: ["Myanmar", "Bangladesh", "Tailândia", "Camboja", "Malásia"],
         answer: 0,
-        explanation: "Myanmar faz fronteira com China e Laos. O Vietnã também! Mas atenção: aqui só Myanmar aparece no lugar certo… brincadeira — leia abaixo.",
+        explanation: "Myanmar faz fronteira com China e Laos. Tailândia e Camboja tocam o Laos, mas não a China; Bangladesh não toca nenhum dos dois.",
         hint: "Já foi chamado de Birmânia.",
       },
       {
