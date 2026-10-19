@@ -44,11 +44,11 @@ export function Game() {
   const [records, setRecords] = useState<Records>({ best: 0, phases: 0, bestCorrect: 0 });
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => setRecords(loadRec()), []);
-  useEffect(() => setSoundOn(sound), [sound]);
+  useEffect(() => { setRecords(loadRec()); }, []);
+  useEffect(() => { setSoundOn(sound); }, [sound]);
 
-  const P = PHASES[phase];
-  const Q = P.questions[qi];
+  const P = PHASES[phase]!;
+  const Q = P.questions[qi]!;
 
   // Hamster reacts to waiting
   useEffect(() => {
@@ -290,7 +290,7 @@ export function Game() {
             <p className="mt-2 font-bold">{P.finale}</p>
             <div className="mx-auto mt-4 inline-flex items-center gap-2 rounded-full bg-gold/20 px-4 py-2 font-bold text-gold">{P.badgeIcon} Emblema: {P.badge}</div>
             <p className="mt-3 text-sm text-muted-foreground">Pontuação: {score}</p>
-            <button onClick={nextPhase} className="btn-gold mt-5 rounded-xl px-6 py-3 text-lg">Seguir para {PHASES[phase + 1].name} →</button>
+            <button onClick={nextPhase} className="btn-gold mt-5 rounded-xl px-6 py-3 text-lg">Seguir para {PHASES[phase + 1]?.name} →</button>
           </div>
         )}
 
@@ -344,7 +344,7 @@ export function Game() {
                 <h3 className="font-extrabold">{p.badgeIcon} {p.name}</h3>
                 <ol className="mt-2 space-y-2">
                   {log.filter((l) => l.phase === pi).map((l) => {
-                    const q = p.questions[l.q];
+                    const q = p.questions[l.q]!;
                     return (
                       <li key={l.q} className="rounded-xl bg-night/50 p-3 text-sm">
                         <p className="font-bold">{l.correct ? "✅" : "❌"} {q.q}</p>

@@ -35,7 +35,7 @@ export function HintModal({ hint, onReward, onClose }: { hint: string; onReward:
     return () => clearInterval(id);
   }, [stage, onReward]);
 
-  const scene = SCENES[Math.min(SCENES.length - 1, Math.floor(((AD_SECONDS - left) / AD_SECONDS) * SCENES.length))];
+  const scene = SCENES[Math.min(SCENES.length - 1, Math.floor(((AD_SECONDS - left) / AD_SECONDS) * SCENES.length))]!;
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-night/80 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
