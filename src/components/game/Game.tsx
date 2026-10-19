@@ -12,8 +12,34 @@ const BGS = [bg1, bg2, bg3];
 const LETTERS = ["A", "B", "C", "D", "E"];
 const LIVES = 3;
 const REC_KEY = "hamster-explorador-recordes";
+const WALLET_KEY = "hamster-explorador-wallet-v1";
+const SKINS = [
+  { id: "original", name: "Explorador Original", icon: "🐹", price: 0 },
+  { id: "bunny", name: "Hamster Coelhinho", icon: "🐰", price: 100 },
+  { id: "pirate", name: "Hamster Pirata", icon: "🏴‍☠️", price: 150 },
+  { id: "wizard", name: "Hamster Mago", icon: "🧙", price: 200 },
+  { id: "astronaut", name: "Hamster Astronauta", icon: "👨‍🚀", price: 300 },
+  { id: "king", name: "Rei da Floresta", icon: "👑", price: 450 },
+  { id: "dragon", name: "Dragão Mágico", icon: "🐉", price: 600 },
+  { id: "gold", name: "Hamster Dourado", icon: "🌟", price: 1000 },
+];
+const SCENES = [
+  { id: "forest", name: "Floresta Encantada", icon: "🌳", price: 0, bg: 0, filter: "none" },
+  { id: "fairy", name: "Bosque das Fadas", icon: "🧚", price: 150, bg: 0, filter: "hue-rotate(35deg) saturate(1.15)" },
+  { id: "crystal", name: "Floresta de Cristais", icon: "💎", price: 250, bg: 1, filter: "hue-rotate(35deg) saturate(1.2)" },
+  { id: "night", name: "Reino Noturno", icon: "🌙", price: 350, bg: 2, filter: "brightness(.72) saturate(1.25)" },
+  { id: "cherry", name: "Vale das Cerejeiras", icon: "🌸", price: 450, bg: 0, filter: "hue-rotate(300deg) saturate(1.2)" },
+  { id: "ice", name: "Reino Gelado", icon: "❄️", price: 550, bg: 1, filter: "hue-rotate(155deg) saturate(.85) brightness(1.08)" },
+  { id: "cloud", name: "Castelo das Nuvens", icon: "☁️", price: 700, bg: 2, filter: "hue-rotate(190deg) brightness(1.12)" },
+  { id: "golden", name: "Floresta Dourada", icon: "✨", price: 900, bg: 0, filter: "sepia(.45) saturate(1.5)" },
+];
+type Wallet = { coins: number; ownedSkins: string[]; ownedScenes: string[]; skin: string; scene: string };
+const DEFAULT_WALLET: Wallet = { coins: 0, ownedSkins: ["original"], ownedScenes: ["forest"], skin: "original", scene: "forest" };
+const loadWallet = (): Wallet => {
+  try { return { ...DEFAULT_WALLET, ...JSON.parse(localStorage.getItem(WALLET_KEY) || "{}") }; } catch { return DEFAULT_WALLET; }
+};
 
-type Screen = "home" | "howto" | "records" | "play" | "phaseDone" | "phaseFail" | "final" | "review";
+type Screen = "home" | "howto" | "records" | "shop" | "play" | "phaseDone" | "phaseFail" | "final" | "review";
 type AnswerLog = { phase: number; q: number; chosen: number; correct: boolean; hint: boolean };
 type Records = { best: number; phases: number; bestCorrect: number };
 
@@ -23,6 +49,7 @@ const loadRec = (): Records => {
 
 export function Game() {
   const [screen, setScreen] = useState<Screen>("home");
+  const [wallet, setWallet] = useState<Wallet>(DEFAULT_WALLET);
   const [sound, setSound] = useState(true);
   const [phase, setPhase] = useState(0);
   const [qi, setQi] = useState(0);
@@ -44,7 +71,34 @@ export function Game() {
   const [records, setRecords] = useState<Records>({ best: 0, phases: 0, bestCorrect: 0 });
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => { setRecords(loadRec()); }, []);
+  useEffect(() => { setRecords(loadRec()); setWallet(loadWallet()); }, []);
+  useEffect(() => { localStorage.setItem(WALLET_KEY, JSON.stringify(wallet)); }, [wallet]);
+  const earnCoins = (amount: number) => setWallet((w) => ({ ...w, coins: w.coins + amount }));
+  const buyOrEquip = (kind: "skin" | "scene", id: string, price: number) => {
+    const ownedKey = kind === "skin" ? "ownedSkins" : "ownedScenes";
+    const selectedKey = kind === "skin" ? "skin" : "scene";
+    const owned = wallet[ownedKey];
+    if (owned.includes(id)) {
+      setWallet((w) => ({ ...w, [selectedKey]: id }));
+      return;
+    }
+    if (wallet.coins < price) {
+      window.alert("Você precisa de mais moedas mágicas!");
+      return;
+    }
+    setWallet((w) => {
+      if (w[ownedKey].includes(id) || w.coins < price) return w;
+      return { ...w, coins: w.coins - price, [ownedKey]: [...w[ownedKey], id], [selectedKey]: id };
+    });
+  };
+  const goHome = () => {
+    if (screen === "play" && !confirmed && !window.confirm("Deseja sair da partida e voltar ao início? Seu progresso desta partida não será mantido.")) return;
+    setPaused(false); setScreen("home");
+  };
+  const restartCurrentPhase = () => {
+    if (!window.confirm("Reiniciar esta fase? As moedas já conquistadas serão mantidas.")) return;
+    retryPhase();
+  };
   useEffect(() => { setSoundOn(sound); }, [sound]);
 
   const P = PHASES[phase]!;
@@ -84,6 +138,7 @@ export function Game() {
     if (ok) {
       play("correct");
       setScore((s) => s + 100 + (hintUsed ? 0 : 25));
+      earnCoins(20);
       setMood("happy");
       setSpeech(hintUsed ? "Acertou! 🎉" : "Sem dica! +25 bônus! ✨");
     } else {
@@ -135,15 +190,22 @@ export function Game() {
 
   const onReward = useCallback(() => { setHintUsed(true); setHints((h) => h + 1); }, []);
 
-  const bg = screen === "home" || screen === "howto" || screen === "records" ? bg1 : BGS[phase];
+  const activeScene = SCENES.find((x) => x.id === wallet.scene) ?? SCENES[0]!;
+  const bg = screen === "home" || screen === "howto" || screen === "records" || screen === "shop" ? BGS[activeScene.bg] : BGS[activeScene.bg] || BGS[phase];
   const correctCount = log.filter((l) => l.correct).length;
   const fmt = (ms: number) => `${Math.floor(ms / 60000)}min ${Math.floor((ms % 60000) / 1000)}s`;
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      <img src={bg} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover transition-all duration-1000" width={1920} height={1088} />
+      <img src={bg} alt="" aria-hidden style={{ filter: activeScene.filter }} className="absolute inset-0 h-full w-full object-cover transition-all duration-1000" width={1920} height={1088} />
       <div className="absolute inset-0 bg-gradient-to-b from-night/40 via-night/20 to-night/70" />
       <Fireflies />
+
+      <div className="fixed left-3 top-3 z-30 flex items-center gap-2">
+        <div className="rounded-full border border-gold/50 bg-night/80 px-3 py-2 text-sm font-extrabold text-gold shadow-lg" aria-label={`${wallet.coins} moedas mágicas`}>🪙 {wallet.coins}</div>
+        {screen !== "home" && <button onClick={goHome} className="btn-ghost rounded-full px-3 py-2 text-sm" aria-label="Voltar ao início">🏠 Início</button>}
+        {screen === "play" && <button onClick={restartCurrentPhase} className="btn-ghost rounded-full px-3 py-2 text-sm" aria-label="Reiniciar fase">🔄 Reiniciar</button>}
+      </div>
 
       <button
         onClick={() => setSound(!sound)}
@@ -166,6 +228,7 @@ export function Game() {
                 <button onClick={() => { play("click"); setScreen("howto"); }} className="btn-ghost rounded-xl py-3">Como jogar</button>
                 <button onClick={() => { play("click"); setScreen("records"); }} className="btn-ghost rounded-xl py-3">Recordes</button>
               </div>
+              <button onClick={() => { play("click"); setScreen("shop"); }} className="btn-gold rounded-xl py-3">🛍️ Loja Mágica</button>
               <button onClick={() => setSound(!sound)} className="btn-ghost rounded-xl py-2 text-sm">Sons: {sound ? "ligado" : "desligado"}</button>
             </div>
           </div>
@@ -183,6 +246,25 @@ export function Game() {
               <li>🏅 Complete as fases para ganhar os emblemas: Explorador da Floresta, Guardião dos Mistérios e Mestre dos Países.</li>
             </ul>
             <button onClick={() => setScreen("home")} className="btn-gold mt-6 rounded-xl px-6 py-3">Voltar</button>
+          </div>
+        )}
+
+        {screen === "shop" && (
+          <div className="panel pop-in my-auto rounded-3xl p-5 sm:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div><p className="text-sm font-bold uppercase tracking-widest text-gold">Personalize sua aventura</p><h2 className="text-3xl font-extrabold text-gold">🛍️ Loja Mágica</h2></div>
+              <div className="rounded-full bg-gold/20 px-4 py-2 font-extrabold text-gold">🪙 {wallet.coins} moedas</div>
+            </div>
+            <p className="mt-2 text-sm text-muted-foreground">Ganhe 20 moedas a cada resposta correta e desbloqueie novos visuais. As compras ficam salvas neste dispositivo.</p>
+            <h3 className="mt-6 text-xl font-extrabold">🐹 Skins do hamster</h3>
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {SKINS.map((item) => { const owned = wallet.ownedSkins.includes(item.id); const equipped = wallet.skin === item.id; return <div key={item.id} className="rounded-2xl border border-border bg-night/50 p-3 text-center"><div className="flex h-16 items-center justify-center text-4xl">{item.icon}</div><p className="mt-2 min-h-10 text-sm font-extrabold">{item.name}</p><p className="my-2 text-xs font-bold text-gold">{item.price === 0 ? "Grátis" : `🪙 ${item.price}`}</p><button onClick={() => buyOrEquip("skin", item.id, item.price)} disabled={equipped} className={`${equipped ? "btn-ghost" : "btn-gold"} w-full rounded-lg px-2 py-2 text-xs`}>{equipped ? "Equipado ✓" : owned ? "Equipar" : "Comprar"}</button></div>; })}
+            </div>
+            <h3 className="mt-7 text-xl font-extrabold">🌌 Cenários de fundo</h3>
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {SCENES.map((item) => { const owned = wallet.ownedScenes.includes(item.id); const equipped = wallet.scene === item.id; return <div key={item.id} className="rounded-2xl border border-border bg-night/50 p-3 text-center"><div className="flex h-16 items-center justify-center text-4xl">{item.icon}</div><p className="mt-2 min-h-10 text-sm font-extrabold">{item.name}</p><p className="my-2 text-xs font-bold text-gold">{item.price === 0 ? "Grátis" : `🪙 ${item.price}`}</p><button onClick={() => buyOrEquip("scene", item.id, item.price)} disabled={equipped} className={`${equipped ? "btn-ghost" : "btn-gold"} w-full rounded-lg px-2 py-2 text-xs`}>{equipped ? "Equipado ✓" : owned ? "Equipar" : "Comprar"}</button></div>; })}
+            </div>
+            <button onClick={() => setScreen("home")} className="btn-ghost mt-6 w-full rounded-xl py-3">⬅ Voltar ao início</button>
           </div>
         )}
 
@@ -363,7 +445,7 @@ export function Game() {
 
       {screen === "play" && !paused && (
         <div className="fixed bottom-2 right-2 z-20 sm:bottom-4 sm:right-4">
-          <Hamster mood={mood} speech={speech} />
+          <div className="relative"><div className="absolute -right-1 top-8 z-10 rounded-full border border-gold/50 bg-night/90 px-2 py-1 text-xl shadow-lg" title={SKINS.find((x) => x.id === wallet.skin)?.name}>{SKINS.find((x) => x.id === wallet.skin)?.icon ?? "🐹"}</div><Hamster mood={mood} speech={speech} /></div>
         </div>
       )}
 
