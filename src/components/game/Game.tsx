@@ -141,6 +141,7 @@ export function Game() {
     if (timeLeft === 0) {
       setConfirmed(true);
       setLog((l) => [...l, { phase, q: qi, chosen: -1, correct: false, hint: hintUsed }]);
+      setSelected(null);
       play("wrong");
       setLives((l) => l - 1);
       setMood("faint");
