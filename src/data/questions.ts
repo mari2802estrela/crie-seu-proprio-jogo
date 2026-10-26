@@ -103,7 +103,7 @@ export const PHASES: Phase[] = [
     subtitle: "Dificuldade: difícil",
     badge: "Guardião dos Mistérios",
     badgeIcon: "🔮",
-    finale: "Um CRISTAL MÁGICO brilha nas patinhas do hamster e revela a localização do último portal!",
+    finale: "Um CRISTAL MÁGICO brilha nas patinhas do hamster e revela o caminho para o Reino das Fronteiras Perdidas!",
     questions: [
       {
         q: "Qual destes países tem fronteiras terrestres com a China e o Afeganistão?",
@@ -183,7 +183,7 @@ export const PHASES: Phase[] = [
     subtitle: "Dificuldade: muito difícil",
     badge: "Mestre dos Países",
     badgeIcon: "👑",
-    finale: "O PORTAL DOURADO se abre! A floresta inteira celebra o grande explorador!",
+    finale: "As fronteiras se abrem! Um barco mágico espera o hamster para cruzar o oceano!",
     questions: [
       {
         q: "Qual destes países possui uma fronteira terrestre com a Coreia do Norte?",

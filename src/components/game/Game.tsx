@@ -301,8 +301,8 @@ export function Game() {
             <h2 className="text-3xl font-extrabold text-gold">🏆 Recordes</h2>
             <div className="mt-5 grid grid-cols-3 gap-3">
               <Stat label="Maior pontuação" value={records.best} />
-              <Stat label="Fases concluídas" value={`${records.phases}/3`} />
-              <Stat label="Mais acertos" value={`${records.bestCorrect}/30`} />
+              <Stat label="Fases concluídas" value={`${records.phases}/${PHASES.length}`} />
+              <Stat label="Mais acertos" value={`${records.bestCorrect}/${PHASES.length * 10}`} />
             </div>
             <p className="mt-4 text-xs text-muted-foreground">Recordes salvos neste dispositivo.</p>
             <button onClick={() => setScreen("home")} className="btn-gold mt-5 rounded-xl px-6 py-3">Voltar</button>
@@ -430,7 +430,7 @@ export function Game() {
               <p className="mt-2 font-bold">Parabéns, explorador! Você desvendou os segredos da floresta e provou que conhece o mundo!</p>
               <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <Stat label="Pontuação" value={score} />
-                <Stat label="Acertos" value={`${correctCount}/30`} />
+                <Stat label="Acertos" value={`${correctCount}/${PHASES.length * 10}`} />
                 <Stat label="Dicas" value={hints} />
                 <Stat label="Tempo" value={fmt(elapsed)} />
               </div>
