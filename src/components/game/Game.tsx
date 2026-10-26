@@ -185,7 +185,7 @@ export function Game() {
     if (phase === PHASES.length - 1) {
       play("win");
       setElapsed(Date.now() - startAt);
-      saveRecords(score, 3, log.filter((l) => l.correct).length);
+      saveRecords(score, PHASES.length, log.filter((l) => l.correct).length);
       localStorage.setItem(PROGRESS_KEY, "0"); setSavedPhase(0);
       setMood("dance"); setSpeech("Você conseguiu!"); setScreen("final");
     } else {
@@ -219,7 +219,7 @@ export function Game() {
   const onReward = useCallback(() => { setHintUsed(true); setHints((h) => h + 1); }, []);
 
   const activeScene = SCENES.find((x) => x.id === wallet.scene) ?? SCENES[0]!;
-  const bg = screen === "home" || screen === "howto" || screen === "records" || screen === "shop" ? BGS[activeScene.bg] : BGS[activeScene.bg] || BGS[phase];
+  const bg = screen === "home" || screen === "howto" || screen === "records" || screen === "shop" ? BGS[activeScene.bg] : BGS[activeScene.bg] || BGS[phase % BGS.length];
   const correctCount = log.filter((l) => l.correct).length;
   const fmt = (ms: number) => `${Math.floor(ms / 60000)}min ${Math.floor((ms % 60000) / 1000)}s`;
 
@@ -248,7 +248,7 @@ export function Game() {
           <div className="flex flex-1 flex-col items-center justify-center text-center">
             <p className="pop-in font-display text-sm font-bold uppercase tracking-[0.3em] text-cream">O Desafio dos Países</p>
             <h1 className="pop-in text-gold-gradient text-6xl font-extrabold leading-none sm:text-8xl">HAMSTER<br />EXPLORADOR</h1>
-            <p className="mt-3 text-lg font-bold text-cream drop-shadow">30 desafios. 3 fases. Um mundo de mistérios!</p>
+            <p className="mt-3 text-lg font-bold text-cream drop-shadow">{PHASES.length * 10} desafios. {PHASES.length} fases. Um mundo de mistérios!</p>
             <div className="my-4"><Hamster mood="wave" size="lg" speech={savedPhase > 0 ? `Vamos continuar da Fase ${savedPhase + 1}! 🗺️` : "Pronto para a aventura? 🗺️"} /></div>
             <div className="flex w-full max-w-xs flex-col gap-3">
               <button onClick={startGame} className="btn-gold rounded-2xl py-4 text-2xl">{savedPhase > 0 ? `Continuar · Fase ${savedPhase + 1}` : "Jogar agora"}</button>
@@ -266,7 +266,7 @@ export function Game() {
           <div className="panel pop-in my-auto rounded-3xl p-6">
             <h2 className="text-3xl font-extrabold text-gold">Como jogar</h2>
             <ul className="mt-4 space-y-3 text-sm sm:text-base">
-              <li>🌳 <b>3 fases</b> com <b>10 perguntas</b> cada, sempre com 5 alternativas (A–E) e só uma correta.</li>
+              <li>🌳 <b>{PHASES.length} fases</b> com <b>10 perguntas</b> cada, sempre com 5 alternativas (A–E) e só uma correta.</li>
               <li>✅ Escolha uma alternativa e toque em <b>Confirmar</b>. Depois disso, não dá para mudar.</li>
               <li>⭐ Cada acerto vale <b>100 pontos</b>. Acertou sem dica? <b>+25 de bônus</b>!</li>
               <li>❤️ Você tem <b>3 vidas por fase</b>. Errar tira uma vida. Sem vidas, tente a fase de novo.</li>
@@ -301,8 +301,8 @@ export function Game() {
             <h2 className="text-3xl font-extrabold text-gold">🏆 Recordes</h2>
             <div className="mt-5 grid grid-cols-3 gap-3">
               <Stat label="Maior pontuação" value={records.best} />
-              <Stat label="Fases concluídas" value={`${records.phases}/3`} />
-              <Stat label="Mais acertos" value={`${records.bestCorrect}/30`} />
+              <Stat label="Fases concluídas" value={`${records.phases}/${PHASES.length}`} />
+              <Stat label="Mais acertos" value={`${records.bestCorrect}/${PHASES.length * 10}`} />
             </div>
             <p className="mt-4 text-xs text-muted-foreground">Recordes salvos neste dispositivo.</p>
             <button onClick={() => setScreen("home")} className="btn-gold mt-5 rounded-xl px-6 py-3">Voltar</button>
@@ -396,7 +396,7 @@ export function Game() {
         {screen === "phaseDone" && (
           <div className="panel pop-in my-auto rounded-3xl p-6 text-center">
             <Confetti />
-            <div className="text-6xl">{phase === 0 ? "🗺️" : "💎"}</div>
+            <div className="text-6xl">{P.badgeIcon}</div>
             <h2 className="mt-2 text-3xl font-extrabold text-gold">Fase {P.id} concluída!</h2>
             <p className="mt-2 font-bold">{P.finale}</p>
             <div className="mx-auto mt-4 inline-flex items-center gap-2 rounded-full bg-gold/20 px-4 py-2 font-bold text-gold">{P.badgeIcon} Emblema: {P.badge}</div>
@@ -430,7 +430,7 @@ export function Game() {
               <p className="mt-2 font-bold">Parabéns, explorador! Você desvendou os segredos da floresta e provou que conhece o mundo!</p>
               <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <Stat label="Pontuação" value={score} />
-                <Stat label="Acertos" value={`${correctCount}/30`} />
+                <Stat label="Acertos" value={`${correctCount}/${PHASES.length * 10}`} />
                 <Stat label="Dicas" value={hints} />
                 <Stat label="Tempo" value={fmt(elapsed)} />
               </div>
