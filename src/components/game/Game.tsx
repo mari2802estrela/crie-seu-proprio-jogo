@@ -247,7 +247,7 @@ export function Game() {
         {screen === "home" && (
           <div className="flex flex-1 flex-col items-center justify-center text-center">
             <p className="pop-in font-display text-sm font-bold uppercase tracking-[0.3em] text-cream">O Desafio dos Países</p>
-            <h1 className="pop-in text-gold-gradient text-6xl font-extrabold leading-none sm:text-8xl">HAMSTER<br />EXPLORADOR</h1>
+            <h1 className="pop-in text-gold-gradient text-7xl font-extrabold leading-none sm:text-9xl">JJ<br />QUIZ</h1>
             <p className="mt-3 text-lg font-bold text-cream drop-shadow">{PHASES.length * 10} desafios. {PHASES.length} fases. Um mundo de mistérios!</p>
             <div className="my-4"><Hamster mood="wave" size="lg" speech={savedPhase > 0 ? `Vamos continuar da Fase ${savedPhase + 1}! 🗺️` : "Pronto para a aventura? 🗺️"} /></div>
             <div className="flex w-full max-w-xs flex-col gap-3">
