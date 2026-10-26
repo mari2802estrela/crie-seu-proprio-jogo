@@ -155,3 +155,17 @@
 .ad-stage { background: linear-gradient(135deg, oklch(0.96 0.02 40), oklch(0.9 0.04 20)); color: oklch(0.3 0.03 30); }
 .ad-bottle { background: linear-gradient(180deg, oklch(0.99 0.01 60), oklch(0.88 0.04 40)); box-shadow: 0 20px 30px -10px oklch(0.4 0.05 30 / .35); }
 .ad-cap { background: oklch(0.35 0.03 30); }
+
+/* Extra hamster moods */
+@keyframes h-wave { 0%,100% { transform: rotate(0) } 25% { transform: rotate(-6deg) translateY(-4px) } 75% { transform: rotate(6deg) translateY(-4px) } }
+@keyframes h-wave-hand { 0%,100% { transform: rotate(-20deg) } 50% { transform: rotate(25deg) } }
+@keyframes h-spin { 0% { transform: scale(1) rotateY(0) } 50% { transform: scale(1.15) rotateY(180deg) } 100% { transform: scale(1) rotateY(360deg) } }
+@keyframes h-cheer { 0%,100% { transform: translateY(0) scale(1,1) } 20% { transform: translateY(0) scale(1.15,.85) } 50% { transform: translateY(-40px) scale(.9,1.1) } 80% { transform: translateY(0) scale(1.1,.9) } }
+@keyframes h-scared { 0%,100% { transform: translateX(0) } 25% { transform: translateX(-3px) rotate(-2deg) } 75% { transform: translateX(3px) rotate(2deg) } }
+@keyframes h-faint { 0% { transform: rotate(0) } 60% { transform: rotate(95deg) translateY(10px) } 100% { transform: rotate(85deg) translateY(10px) } }
+.h-wave { animation: h-wave 1.4s ease-in-out infinite; }
+.h-wave-hand { animation: h-wave-hand .5s ease-in-out infinite; }
+.h-spin { animation: h-spin .9s ease-in-out 2; }
+.h-cheer { animation: h-cheer .7s ease-in-out infinite; }
+.h-scared { animation: h-scared .15s linear infinite; }
+.h-faint { animation: h-faint 1s ease-in forwards; filter: saturate(.6); }

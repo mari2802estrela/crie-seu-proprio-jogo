@@ -11,6 +11,9 @@ import { HintModal } from "./HintModal";
 const BGS = [bg1, bg2, bg3];
 const LETTERS = ["A", "B", "C", "D", "E"];
 const LIVES = 3;
+const TIME_LIMIT = 30;
+const PROGRESS_KEY = "hamster-explorador-progresso";
+const loadProgress = () => { try { return Math.min(PHASES.length - 1, Math.max(0, Number(localStorage.getItem(PROGRESS_KEY) || 0))); } catch { return 0; } };
 const REC_KEY = "hamster-explorador-recordes";
 const WALLET_KEY = "hamster-explorador-wallet-v1";
 const SKINS = [
@@ -69,9 +72,11 @@ export function Game() {
   const [mood, setMood] = useState<Mood>("idle");
   const [speech, setSpeech] = useState<string | undefined>("Vamos descobrir!");
   const [records, setRecords] = useState<Records>({ best: 0, phases: 0, bestCorrect: 0 });
+  const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
+  const [savedPhase, setSavedPhase] = useState(0);
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => { setRecords(loadRec()); setWallet(loadWallet()); }, []);
+  useEffect(() => { setRecords(loadRec()); setWallet(loadWallet()); setSavedPhase(loadProgress()); }, []);
   useEffect(() => { localStorage.setItem(WALLET_KEY, JSON.stringify(wallet)); }, [wallet]);
   const earnCoins = (amount: number) => setWallet((w) => ({ ...w, coins: w.coins + amount }));
   const buyOrEquip = (kind: "skin" | "scene", id: string, price: number) => {
@@ -122,11 +127,31 @@ export function Game() {
     setRecords(next);
   }, []);
 
-  const resetQuestion = () => { setSelected(null); setConfirmed(false); setHintUsed(false); };
+  const resetQuestion = () => { setSelected(null); setConfirmed(false); setHintUsed(false); setTimeLeft(TIME_LIMIT); };
+
+  // Countdown per question
+  useEffect(() => {
+    if (screen !== "play" || confirmed || paused || hintOpen) return;
+    const t = setInterval(() => setTimeLeft((v) => Math.max(0, v - 1)), 1000);
+    return () => clearInterval(t);
+  }, [screen, confirmed, paused, hintOpen, qi, phase]);
+  useEffect(() => {
+    if (screen !== "play" || confirmed || paused) return;
+    if (timeLeft === 10) { setMood("scared"); setSpeech("Corre! O tempo está acabando! ⏳"); }
+    if (timeLeft === 0) {
+      setConfirmed(true);
+      setLog((l) => [...l, { phase, q: qi, chosen: -1, correct: false, hint: hintUsed }]);
+      play("wrong");
+      setLives((l) => l - 1);
+      setMood("faint");
+      setSpeech("O tempo acabou! ⌛");
+    }
+  }, [timeLeft]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const startGame = () => {
     play("click");
-    setPhase(0); setQi(0); setLives(LIVES); setScore(0); setPhaseStartScore(0); setHints(0); setLog([]); setBadges([]);
+    const start = loadProgress();
+    setPhase(start); setQi(0); setLives(LIVES); setScore(0); setPhaseStartScore(0); setHints(0); setLog([]); setBadges([]);
     setStartAt(Date.now()); resetQuestion(); setScreen("play");
   };
 
@@ -139,7 +164,7 @@ export function Game() {
       play("correct");
       setScore((s) => s + 100 + (hintUsed ? 0 : 25));
       earnCoins(20);
-      setMood("happy");
+      setMood((["happy", "spin", "cheer", "wave"] as Mood[])[Math.floor(Math.random() * 4)]!);
       setSpeech(hintUsed ? "Acertou! 🎉" : "Sem dica! +25 bônus! ✨");
     } else {
       play("wrong");
@@ -160,11 +185,13 @@ export function Game() {
       play("win");
       setElapsed(Date.now() - startAt);
       saveRecords(score, 3, log.filter((l) => l.correct).length);
+      localStorage.setItem(PROGRESS_KEY, "0"); setSavedPhase(0);
       setMood("dance"); setSpeech("Você conseguiu!"); setScreen("final");
     } else {
       play("phase");
       saveRecords(score, nb.length, log.filter((l) => l.correct).length);
-      setMood("happy"); setSpeech("Você conseguiu!"); setScreen("phaseDone");
+      localStorage.setItem(PROGRESS_KEY, String(phase + 1)); setSavedPhase(phase + 1);
+      setMood("cheer"); setSpeech("Você conseguiu!"); setScreen("phaseDone");
     }
   };
 
@@ -221,9 +248,9 @@ export function Game() {
             <p className="pop-in font-display text-sm font-bold uppercase tracking-[0.3em] text-cream">O Desafio dos Países</p>
             <h1 className="pop-in text-gold-gradient text-6xl font-extrabold leading-none sm:text-8xl">HAMSTER<br />EXPLORADOR</h1>
             <p className="mt-3 text-lg font-bold text-cream drop-shadow">30 desafios. 3 fases. Um mundo de mistérios!</p>
-            <div className="my-4"><Hamster mood="idle" size="lg" speech="Pronto para a aventura? 🗺️" /></div>
+            <div className="my-4"><Hamster mood="wave" size="lg" speech={savedPhase > 0 ? `Vamos continuar da Fase ${savedPhase + 1}! 🗺️` : "Pronto para a aventura? 🗺️"} /></div>
             <div className="flex w-full max-w-xs flex-col gap-3">
-              <button onClick={startGame} className="btn-gold rounded-2xl py-4 text-2xl">Jogar agora</button>
+              <button onClick={startGame} className="btn-gold rounded-2xl py-4 text-2xl">{savedPhase > 0 ? `Continuar · Fase ${savedPhase + 1}` : "Jogar agora"}</button>
               <div className="grid grid-cols-2 gap-3">
                 <button onClick={() => { play("click"); setScreen("howto"); }} className="btn-ghost rounded-xl py-3">Como jogar</button>
                 <button onClick={() => { play("click"); setScreen("records"); }} className="btn-ghost rounded-xl py-3">Recordes</button>
@@ -299,6 +326,7 @@ export function Game() {
                 <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-muted">
                   <div className="h-full rounded-full transition-all duration-700" style={{ width: `${((qi + (confirmed ? 1 : 0)) / 10) * 100}%`, background: "var(--gradient-gold)" }} />
                 </div>
+                <span className={`rounded-lg px-2 py-1 text-xs font-extrabold ${timeLeft <= 10 ? "animate-pulse bg-destructive/30 text-destructive" : "bg-gold/20 text-gold"}`} aria-label={`${timeLeft} segundos restantes`}>⏱ {timeLeft}s</span>
                 <button onClick={togglePause} className="btn-ghost rounded-lg px-2 py-1 text-xs" aria-label="Pausar">{paused ? "▶" : "⏸"}</button>
               </div>
             </header>
@@ -343,7 +371,7 @@ export function Game() {
                 {confirmed ? (
                   <div className="pop-in mt-5 rounded-2xl border border-border bg-night/50 p-4">
                     <p className={`font-display text-lg font-extrabold ${selected === Q.answer ? "text-success" : "text-destructive"}`}>
-                      {selected === Q.answer ? `Correto! +${hintUsed ? 100 : 125}` : `Resposta correta: ${LETTERS[Q.answer]}) ${Q.options[Q.answer]}`}
+                      {selected === Q.answer ? `Correto! +${hintUsed ? 100 : 125}` : `${selected === null ? "Tempo esgotado! " : ""}Resposta correta: ${LETTERS[Q.answer]}) ${Q.options[Q.answer]}`}
                     </p>
                     <p className="mt-1 text-sm text-muted-foreground">{Q.explanation}</p>
                     <button onClick={next} className="btn-gold mt-4 w-full rounded-xl py-3 text-lg">
@@ -380,7 +408,7 @@ export function Game() {
           <div className="panel pop-in my-auto rounded-3xl p-6 text-center">
             <Hamster mood="sad" size="lg" speech="Não desista, explorador!" />
             <h2 className="mt-2 text-3xl font-extrabold">Suas vidas acabaram</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Tente a fase “{P.name}” novamente. Sua pontuação volta para {phaseStartScore}.</p>
+            <p className="mt-2 text-sm text-muted-foreground">As fases já vencidas continuam desbloqueadas. Tente a fase “{P.name}” novamente. Sua pontuação volta para {phaseStartScore}.</p>
             <div className="mt-5 flex justify-center gap-3">
               <button onClick={() => setScreen("home")} className="btn-ghost rounded-xl px-5 py-3">Início</button>
               <button onClick={retryPhase} className="btn-gold rounded-xl px-5 py-3">Tentar novamente</button>
