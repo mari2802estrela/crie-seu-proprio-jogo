@@ -12,6 +12,13 @@ const BGS = [bg1, bg2, bg3];
 const LETTERS = ["A", "B", "C", "D", "E"];
 const LIVES = 3;
 const TIME_LIMIT = 30;
+// Each phase is split into levels of 3 questions; the 10th question is the final challenge.
+export const levelOf = (qi: number) => Math.min(4, Math.floor(qi / 3) + 1);
+const LEVEL_NAMES = ["", "Nível 1 · Aquecimento", "Nível 2 · Desafio", "Nível 3 · Especialista", "Desafio final"];
+const timeFor = (qi: number) => [0, 30, 25, 20, 20][levelOf(qi)]!;
+const SESSION_KEY = "jj-quiz-partida-v1";
+type Session = { phase: number; qi: number; lives: number; score: number; phaseStartScore: number; hints: number; log: AnswerLog[]; badges: number[]; startAt: number };
+const loadSession = (): Session | null => { try { const v = JSON.parse(localStorage.getItem(SESSION_KEY) || "null"); return v && typeof v.phase === "number" ? v : null; } catch { return null; } };
 const PROGRESS_KEY = "hamster-explorador-progresso";
 const loadProgress = () => { try { return Math.min(PHASES.length - 1, Math.max(0, Number(localStorage.getItem(PROGRESS_KEY) || 0))); } catch { return 0; } };
 const REC_KEY = "hamster-explorador-recordes";
@@ -74,9 +81,11 @@ export function Game() {
   const [records, setRecords] = useState<Records>({ best: 0, phases: 0, bestCorrect: 0 });
   const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
   const [savedPhase, setSavedPhase] = useState(0);
+  const [session, setSession] = useState<Session | null>(null);
+  const [runKey, setRunKey] = useState(0);
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => { setRecords(loadRec()); setWallet(loadWallet()); setSavedPhase(loadProgress()); }, []);
+  useEffect(() => { setRecords(loadRec()); setWallet(loadWallet()); setSavedPhase(loadProgress()); setSession(loadSession()); }, []);
   useEffect(() => { localStorage.setItem(WALLET_KEY, JSON.stringify(wallet)); }, [wallet]);
   const earnCoins = (amount: number) => setWallet((w) => ({ ...w, coins: w.coins + amount }));
   const buyOrEquip = (kind: "skin" | "scene", id: string, price: number) => {
@@ -97,7 +106,6 @@ export function Game() {
     });
   };
   const goHome = () => {
-    if (screen === "play" && !confirmed && !window.confirm("Deseja sair da partida e voltar ao início? Seu progresso desta partida não será mantido.")) return;
     setPaused(false); setScreen("home");
   };
   const restartCurrentPhase = () => {
@@ -105,6 +113,11 @@ export function Game() {
     retryPhase();
   };
   useEffect(() => { setSoundOn(sound); }, [sound]);
+  const writeSession = (v: Session | null) => { setSession(v); if (v) localStorage.setItem(SESSION_KEY, JSON.stringify(v)); else localStorage.removeItem(SESSION_KEY); };
+  useEffect(() => {
+    if (screen !== "play" || confirmed) return;
+    writeSession({ phase, qi, lives, score, phaseStartScore, hints, log, badges, startAt });
+  }, [screen, phase, qi, confirmed]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const P = PHASES[phase]!;
   const Q = P.questions[qi]!;
@@ -113,7 +126,7 @@ export function Game() {
   useEffect(() => {
     if (screen !== "play" || confirmed || paused) return;
     setMood(qi % 3 === 2 ? "think" : "idle");
-    setSpeech(qi === 0 ? "Vamos descobrir!" : qi % 3 === 2 ? "Hmm... essa é difícil!" : "Pense com cuidado!");
+    setSpeech(qi === 0 ? "Vamos descobrir! Nível 1 🌱" : qi === 9 ? "Desafio final da fase! 🔥" : qi % 3 === 0 ? `Subiu para o Nível ${levelOf(qi)}! ⬆️` : qi % 3 === 2 ? "Hmm... essa é difícil!" : "Pense com cuidado!");
     if (idleTimer.current) clearTimeout(idleTimer.current);
     idleTimer.current = setTimeout(() => { setMood("point"); setSpeech("Leia a pergunta de novo 👀"); }, 15000);
     const t2 = setTimeout(() => { setMood("sign"); setSpeech("Precisa de uma dica?"); }, 30000);
@@ -128,6 +141,7 @@ export function Game() {
   }, []);
 
   const resetQuestion = () => { setSelected(null); setConfirmed(false); setHintUsed(false); setTimeLeft(TIME_LIMIT); };
+  useEffect(() => { setTimeLeft(timeFor(qi)); }, [qi, phase]);
 
   // Countdown per question
   useEffect(() => {
@@ -151,9 +165,17 @@ export function Game() {
 
   const startGame = () => {
     play("click");
-    const start = loadProgress();
-    setPhase(start); setQi(0); setLives(LIVES); setScore(0); setPhaseStartScore(0); setHints(0); setLog([]); setBadges([]);
-    setStartAt(Date.now()); resetQuestion(); setScreen("play");
+    const s = loadSession();
+    if (s) {
+      setPhase(s.phase); setQi(s.qi); setLives(s.lives); setScore(s.score); setPhaseStartScore(s.phaseStartScore); setHints(s.hints); setLog(s.log.filter((l) => !(l.phase === s.phase && l.q === s.qi))); setBadges(s.badges); setStartAt(s.startAt);
+    } else {
+      setPhase(loadProgress()); setQi(0); setLives(LIVES); setScore(0); setPhaseStartScore(0); setHints(0); setLog([]); setBadges([]); setStartAt(Date.now());
+    }
+    resetQuestion(); setTimeLeft(timeFor(s?.qi ?? 0)); setScreen("play");
+  };
+  const newGame = () => {
+    if (!window.confirm("Começar uma nova partida do zero? A partida salva será apagada.")) return;
+    writeSession(null); localStorage.setItem(PROGRESS_KEY, "0"); setSavedPhase(0); startGame();
   };
 
   const confirm = () => {
@@ -165,6 +187,8 @@ export function Game() {
       play("correct");
       setScore((s) => s + 100 + (hintUsed ? 0 : 25));
       earnCoins(20);
+      setRunKey((k) => k + 1);
+      saveRecords(score + 100 + (hintUsed ? 0 : 25), badges.length, log.filter((l) => l.correct).length + 1);
       setMood((["happy", "spin", "cheer", "wave"] as Mood[])[Math.floor(Math.random() * 4)]!);
       setSpeech(hintUsed ? "Acertou! 🎉" : "Sem dica! +25 bônus! ✨");
     } else {
@@ -177,7 +201,7 @@ export function Game() {
 
   const next = () => {
     play("click");
-    if (lives <= 0) { saveRecords(score, badges.length, log.filter((l) => l.correct).length); setScreen("phaseFail"); setMood("sad"); return; }
+    if (lives <= 0) { saveRecords(score, badges.length, log.filter((l) => l.correct).length); writeSession({ phase, qi: 0, lives: LIVES, score: phaseStartScore, phaseStartScore, hints, log: log.filter((x) => x.phase !== phase), badges, startAt }); setScreen("phaseFail"); setMood("sad"); return; }
     if (qi + 1 < P.questions.length) { setQi(qi + 1); resetQuestion(); return; }
     // phase complete
     const nb = [...badges, phase];
@@ -186,12 +210,13 @@ export function Game() {
       play("win");
       setElapsed(Date.now() - startAt);
       saveRecords(score, PHASES.length, log.filter((l) => l.correct).length);
-      localStorage.setItem(PROGRESS_KEY, "0"); setSavedPhase(0);
+      localStorage.setItem(PROGRESS_KEY, "0"); setSavedPhase(0); writeSession(null);
       setMood("dance"); setSpeech("Você conseguiu!"); setScreen("final");
     } else {
       play("phase");
       saveRecords(score, nb.length, log.filter((l) => l.correct).length);
       localStorage.setItem(PROGRESS_KEY, String(phase + 1)); setSavedPhase(phase + 1);
+      writeSession({ phase: phase + 1, qi: 0, lives: LIVES, score, phaseStartScore: score, hints, log, badges: nb, startAt });
       setMood("cheer"); setSpeech("Você conseguiu!"); setScreen("phaseDone");
     }
   };
@@ -249,9 +274,16 @@ export function Game() {
             <p className="pop-in font-display text-sm font-bold uppercase tracking-[0.3em] text-cream">O Desafio dos Países</p>
             <h1 className="pop-in text-gold-gradient text-7xl font-extrabold leading-none sm:text-9xl">JJ<br />QUIZ</h1>
             <p className="mt-3 text-lg font-bold text-cream drop-shadow">{PHASES.length * 10} desafios. {PHASES.length} fases. Um mundo de mistérios!</p>
-            <div className="my-4"><Hamster mood="wave" size="lg" speech={savedPhase > 0 ? `Vamos continuar da Fase ${savedPhase + 1}! 🗺️` : "Pronto para a aventura? 🗺️"} /></div>
+            <div className="my-4"><Hamster mood="wave" size="lg" skin={wallet.skin} speech={session ? `Vamos continuar de onde paramos! 🗺️` : "Pronto para a aventura? 🗺️"} /></div>
+            <div className="mb-3 flex flex-wrap justify-center gap-2 text-sm font-extrabold">
+              <span className="rounded-full bg-night/70 px-3 py-1 text-gold">🏆 Recorde: {records.best} pts</span>
+              <span className="rounded-full bg-night/70 px-3 py-1 text-gold">✅ {records.bestCorrect} acertos</span>
+              <span className="rounded-full bg-night/70 px-3 py-1 text-gold">🏅 {records.phases}/{PHASES.length} fases</span>
+            </div>
             <div className="flex w-full max-w-xs flex-col gap-3">
-              <button onClick={startGame} className="btn-gold rounded-2xl py-4 text-2xl">{savedPhase > 0 ? `Continuar · Fase ${savedPhase + 1}` : "Jogar agora"}</button>
+              <button onClick={startGame} className="btn-gold rounded-2xl py-4 text-2xl">{session ? `Continuar · Fase ${session.phase + 1} · P${session.qi + 1}` : savedPhase > 0 ? `Continuar · Fase ${savedPhase + 1}` : "Jogar agora"}</button>
+              {session && <p className="-mt-1 text-xs font-bold text-cream drop-shadow">⭐ {session.score} pts · ❤️ {session.lives} vidas</p>}
+              {(session || savedPhase > 0) && <button onClick={newGame} className="btn-ghost rounded-xl py-2 text-sm">🔁 Nova partida do zero</button>}
               <div className="grid grid-cols-2 gap-3">
                 <button onClick={() => { play("click"); setScreen("howto"); }} className="btn-ghost rounded-xl py-3">Como jogar</button>
                 <button onClick={() => { play("click"); setScreen("records"); }} className="btn-ghost rounded-xl py-3">Recordes</button>
@@ -267,6 +299,8 @@ export function Game() {
             <h2 className="text-3xl font-extrabold text-gold">Como jogar</h2>
             <ul className="mt-4 space-y-3 text-sm sm:text-base">
               <li>🌳 <b>{PHASES.length} fases</b> com <b>10 perguntas</b> cada, sempre com 5 alternativas (A–E) e só uma correta.</li>
+              <li>📶 Cada fase tem níveis: perguntas 1–3 <b>Nível 1</b> (30s), 4–6 <b>Nível 2</b> (25s), 7–9 <b>Nível 3</b> (20s) e a 10ª é o <b>Desafio final</b>.</li>
+              <li>💾 Sua partida fica salva: ao voltar ao início, você continua de onde parou.</li>
               <li>✅ Escolha uma alternativa e toque em <b>Confirmar</b>. Depois disso, não dá para mudar.</li>
               <li>⭐ Cada acerto vale <b>100 pontos</b>. Acertou sem dica? <b>+25 de bônus</b>!</li>
               <li>❤️ Você tem <b>3 vidas por fase</b>. Errar tira uma vida. Sem vidas, tente a fase de novo.</li>
@@ -284,6 +318,7 @@ export function Game() {
               <div className="rounded-full bg-gold/20 px-4 py-2 font-extrabold text-gold">🪙 {wallet.coins} moedas</div>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">Ganhe 20 moedas a cada resposta correta e desbloqueie novos visuais. As compras ficam salvas neste dispositivo.</p>
+            <div className="mt-4 flex justify-center"><Hamster mood="wave" skin={wallet.skin} speech="Olha meu visual! ✨" /></div>
             <h3 className="mt-6 text-xl font-extrabold">🐹 Skins do hamster</h3>
             <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {SKINS.map((item) => { const owned = wallet.ownedSkins.includes(item.id); const equipped = wallet.skin === item.id; return <div key={item.id} className="rounded-2xl border border-border bg-night/50 p-3 text-center"><div className="flex h-16 items-center justify-center text-4xl">{item.icon}</div><p className="mt-2 min-h-10 text-sm font-extrabold">{item.name}</p><p className="my-2 text-xs font-bold text-gold">{item.price === 0 ? "Grátis" : `🪙 ${item.price}`}</p><button onClick={() => buyOrEquip("skin", item.id, item.price)} disabled={equipped} className={`${equipped ? "btn-ghost" : "btn-gold"} w-full rounded-lg px-2 py-2 text-xs`}>{equipped ? "Equipado ✓" : owned ? "Equipar" : "Comprar"}</button></div>; })}
@@ -323,6 +358,7 @@ export function Game() {
                 </div>
               </div>
               <div className="mt-2 flex items-center gap-3">
+                <span className="whitespace-nowrap rounded-lg bg-emerald/40 px-2 py-1 text-xs font-extrabold text-cream">{LEVEL_NAMES[levelOf(qi)]}</span>
                 <span className="whitespace-nowrap text-xs font-bold">Pergunta {qi + 1} de 10</span>
                 <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-muted">
                   <div className="h-full rounded-full transition-all duration-700" style={{ width: `${((qi + (confirmed ? 1 : 0)) / 10) * 100}%`, background: "var(--gradient-gold)" }} />
@@ -334,7 +370,7 @@ export function Game() {
 
             {paused ? (
               <div className="panel pop-in my-auto rounded-3xl p-8 text-center">
-                <Hamster mood="sleep" size="lg" />
+                <Hamster mood="sleep" size="lg" skin={wallet.skin} />
                 <h2 className="mt-4 text-3xl font-extrabold">Jogo pausado</h2>
                 <button onClick={togglePause} className="btn-gold mt-4 rounded-xl px-6 py-3">Continuar</button>
               </div>
@@ -407,7 +443,7 @@ export function Game() {
 
         {screen === "phaseFail" && (
           <div className="panel pop-in my-auto rounded-3xl p-6 text-center">
-            <Hamster mood="sad" size="lg" speech="Não desista, explorador!" />
+            <Hamster mood="sad" size="lg" skin={wallet.skin} speech="Não desista, explorador!" />
             <h2 className="mt-2 text-3xl font-extrabold">Suas vidas acabaram</h2>
             <p className="mt-2 text-sm text-muted-foreground">As fases já vencidas continuam desbloqueadas. Tente a fase “{P.name}” novamente. Sua pontuação volta para {phaseStartScore}.</p>
             <div className="mt-5 flex justify-center gap-3">
@@ -423,7 +459,7 @@ export function Game() {
             <div className="relative mx-auto flex h-64 w-64 items-center justify-center">
               <div className="portal-ring absolute inset-0 rounded-full opacity-80 blur-md" />
               <div className="absolute inset-4 rounded-full bg-gold/30 blur-xl" />
-              <Hamster mood="dance" />
+              <Hamster mood="dance" skin={wallet.skin} />
             </div>
             <div className="panel pop-in mt-4 rounded-3xl p-6">
               <h2 className="text-gold-gradient text-4xl font-extrabold">Vitória!</h2>
@@ -474,10 +510,13 @@ export function Game() {
 
       {screen === "play" && !paused && (
         <div className="fixed bottom-2 right-2 z-20 sm:bottom-4 sm:right-4">
-          <div className="relative"><div className="absolute -right-1 top-8 z-10 rounded-full border border-gold/50 bg-night/90 px-2 py-1 text-xl shadow-lg" title={SKINS.find((x) => x.id === wallet.skin)?.name}>{SKINS.find((x) => x.id === wallet.skin)?.icon ?? "🐹"}</div><Hamster mood={mood} speech={speech} /></div>
+          <Hamster mood={mood} speech={speech} skin={wallet.skin} />
         </div>
       )}
 
+      {runKey > 0 && screen === "play" && (
+        <div key={runKey} className="run-around"><div className="run-hop"><Hamster mood="idle" skin={wallet.skin} /></div></div>
+      )}
       {hintOpen && <HintModal hint={Q.hint} onReward={onReward} onClose={() => setHintOpen(false)} />}
     </div>
   );

@@ -2,9 +2,23 @@ import hamsterImg from "@/assets/hamster.png";
 
 export type Mood = "idle" | "happy" | "sad" | "think" | "point" | "dance" | "sleep" | "sign" | "wave" | "spin" | "cheer" | "scared" | "faint";
 
-export function Hamster({ mood, speech, size = "sm" }: { mood: Mood; speech?: string | undefined; size?: "sm" | "lg" }) {
+// Visual outfit for each shop skin: an accessory on the head, one in the hand and a color tint.
+const OUTFITS: Record<string, { head?: string; hand?: string; filter?: string }> = {
+  original: {},
+  bunny: { head: "🐰", filter: "hue-rotate(-20deg) brightness(1.1) saturate(.8)" },
+  pirate: { head: "🏴‍☠️", hand: "⚔️" },
+  wizard: { head: "🎩", hand: "🪄", filter: "hue-rotate(250deg) saturate(1.2)" },
+  astronaut: { head: "🪐", hand: "🚀", filter: "saturate(.4) brightness(1.15)" },
+  king: { head: "👑", hand: "🔱" },
+  dragon: { head: "🐉", hand: "🔥", filter: "hue-rotate(80deg) saturate(1.3)" },
+  gold: { head: "🌟", hand: "✨", filter: "sepia(.8) saturate(2.2) brightness(1.1)" },
+};
+
+export function Hamster({ mood, speech, size = "sm", skin = "original" }: { mood: Mood; speech?: string | undefined; size?: "sm" | "lg"; skin?: string }) {
   const dim = size === "lg" ? "w-56 sm:w-72" : "w-24 sm:w-36";
+  const big = size === "lg" ? "text-6xl sm:text-7xl" : "text-3xl sm:text-4xl";
   const cls = mood === "sign" ? "h-think" : `h-${mood}`;
+  const o = OUTFITS[skin] ?? {};
   return (
     <div className="relative flex flex-col items-center select-none pointer-events-none">
       {speech && (
@@ -12,8 +26,10 @@ export function Hamster({ mood, speech, size = "sm" }: { mood: Mood; speech?: st
           {speech}
         </div>
       )}
-      <div className="relative">
-        <img key={mood} src={hamsterImg} alt="Hamster Explorador" width={1024} height={1024} className={`${dim} ${cls} drop-shadow-2xl`} />
+      <div key={mood} className={`relative ${cls}`}>
+        <img src={hamsterImg} alt="Hamster Explorador" width={1024} height={1024} style={{ filter: o.filter }} className={`${dim} drop-shadow-2xl`} />
+        {o.head && <div className={`absolute left-1/2 top-[2%] -translate-x-1/2 drop-shadow-lg ${big}`}>{o.head}</div>}
+        {o.hand && <div className={`absolute bottom-[18%] right-[4%] drop-shadow-lg ${big}`}>{o.hand}</div>}
         {mood === "sign" && (
           <div className="absolute -left-4 top-1/3 rounded-lg border-4 border-gold-deep bg-cream px-2 font-display text-2xl font-extrabold text-gold-deep">?</div>
         )}
