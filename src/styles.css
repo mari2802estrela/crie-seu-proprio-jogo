@@ -169,3 +169,18 @@
 .h-cheer { animation: h-cheer .7s ease-in-out infinite; }
 .h-scared { animation: h-scared .15s linear infinite; }
 .h-faint { animation: h-faint 1s ease-in forwards; filter: saturate(.6); }
+
+/* Hamster runs around the screen on a correct answer */
+@keyframes run-around {
+  0% { left: 80vw; top: 75vh; transform: scaleX(1); }
+  24% { left: 2vw; top: 75vh; transform: scaleX(1); }
+  25% { left: 2vw; top: 75vh; transform: scaleX(-1); }
+  49% { left: 2vw; top: 8vh; transform: scaleX(-1); }
+  50% { left: 2vw; top: 8vh; transform: scaleX(-1); }
+  74% { left: 80vw; top: 8vh; transform: scaleX(-1); }
+  75% { left: 80vw; top: 8vh; transform: scaleX(1); }
+  100% { left: 80vw; top: 75vh; transform: scaleX(1); }
+}
+@keyframes run-hop { 0%,100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-14px) rotate(4deg); } }
+.run-around { position: fixed; z-index: 40; pointer-events: none; animation: run-around 3.2s linear forwards; }
+.run-hop { animation: run-hop .25s ease-in-out infinite; }
