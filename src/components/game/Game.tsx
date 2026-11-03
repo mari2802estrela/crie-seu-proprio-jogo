@@ -281,7 +281,7 @@ export function Game() {
               <span className="rounded-full bg-night/70 px-3 py-1 text-gold">🏅 {records.phases}/{PHASES.length} fases</span>
             </div>
             <div className="flex w-full max-w-xs flex-col gap-3">
-              <button onClick={startGame} className="btn-gold rounded-2xl py-4 text-2xl">{session ? `Continuar · Fase ${session.phase + 1} · Pergunta ${session.qi + 1}` : savedPhase > 0 ? `Continuar · Fase ${savedPhase + 1}` : "Jogar agora"}</button>
+              <button onClick={startGame} className="btn-gold rounded-2xl py-4 text-2xl">{session ? `Continuar · Fase ${session.phase + 1} · P${session.qi + 1}` : savedPhase > 0 ? `Continuar · Fase ${savedPhase + 1}` : "Jogar agora"}</button>
               {session && <p className="-mt-1 text-xs font-bold text-cream drop-shadow">⭐ {session.score} pts · ❤️ {session.lives} vidas</p>}
               {(session || savedPhase > 0) && <button onClick={newGame} className="btn-ghost rounded-xl py-2 text-sm">🔁 Nova partida do zero</button>}
               <div className="grid grid-cols-2 gap-3">
