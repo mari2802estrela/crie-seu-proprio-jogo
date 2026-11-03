@@ -353,7 +353,7 @@ export const PHASES: Phase[] = [
         hint: "O nome significa 'capital' no idioma local.",
       },
       {
-        q: "Qual é o único país do mundo cujo território inclui o Polo Sul... por reivindicação, ao lado de outros seis?",
+        q: "Qual destes países reivindica oficialmente uma parte da Antártida?",
         options: ["Brasil", "Argentina", "Canadá", "Japão", "Egito"],
         answer: 1,
         explanation: "A Argentina é um dos 7 países com reivindicações territoriais na Antártida (com Chile, Reino Unido, Noruega, França, Austrália e Nova Zelândia).",
