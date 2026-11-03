@@ -266,11 +266,11 @@ export const PHASES: Phase[] = [
     finale: "O hamster atravessou os mares! Uma montanha gelada surge no horizonte...",
     questions: [
       {
-        q: "Qual é a capital da Austrália?",
-        options: ["Sydney", "Melbourne", "Canberra", "Perth", "Brisbane"],
+        q: "Qual destes países é formado por mais de 17 mil ilhas, sendo o maior arquipélago do mundo?",
+        options: ["Japão", "Filipinas", "Indonésia", "Maldivas", "Nova Zelândia"],
         answer: 2,
-        explanation: "Canberra foi planejada para ser a capital e encerrar a disputa entre Sydney e Melbourne.",
-        hint: "Não é a cidade mais famosa, e sim uma cidade planejada.",
+        explanation: "A Indonésia tem mais de 17 mil ilhas, entre elas Java, Bali e Sumatra.",
+        hint: "Sua capital fica na ilha de Java.",
       },
       {
         q: "Qual país tem o maior número de fusos horários (contando territórios)?",
@@ -280,11 +280,11 @@ export const PHASES: Phase[] = [
         hint: "Pense em um país europeu com ilhas espalhadas por todos os oceanos.",
       },
       {
-        q: "Qual destes países NÃO faz fronteira com o Brasil?",
-        options: ["Peru", "Equador", "Bolívia", "Guiana", "Suriname"],
+        q: "A Islândia fica sobre a junção de quais placas tectônicas?",
+        options: ["Africana e Euroasiática", "Norte-Americana e Euroasiática", "Pacífica e Norte-Americana", "Indiana e Euroasiática", "Sul-Americana e Africana"],
         answer: 1,
-        explanation: "Equador e Chile são os únicos países sul-americanos sem fronteira com o Brasil.",
-        hint: "Ele fica cortado pela linha que dá nome a ele.",
+        explanation: "A Dorsal Mesoatlântica atravessa a Islândia, separando as placas Norte-Americana e Euroasiática.",
+        hint: "Uma placa é da América e a outra, da Europa.",
       },
       {
         q: "Qual é o menor país do mundo em área?",
@@ -322,11 +322,11 @@ export const PHASES: Phase[] = [
         hint: "Ele cruza a divisa entre dois continentes.",
       },
       {
-        q: "Qual é a capital da Turquia?",
-        options: ["Istambul", "Ancara", "Esmirna", "Antália", "Bursa"],
-        answer: 1,
-        explanation: "Ancara é a capital desde 1923; Istambul é a maior cidade.",
-        hint: "Não é a cidade dividida entre dois continentes.",
+        q: "Qual é a capital de Madagascar, a quarta maior ilha do mundo?",
+        options: ["Antananarivo", "Maputo", "Port Louis", "Moroni", "Victoria"],
+        answer: 0,
+        explanation: "Antananarivo é a capital de Madagascar. Port Louis é das Ilhas Maurício e Moroni de Comores.",
+        hint: "É um nome bem longo que começa com 'Anta'.",
       },
       {
         q: "Qual país tem a forma de uma bota?",
@@ -353,11 +353,11 @@ export const PHASES: Phase[] = [
         hint: "O nome significa 'capital' no idioma local.",
       },
       {
-        q: "Lesoto é um enclave cercado por qual país?",
-        options: ["Namíbia", "Botsuana", "África do Sul", "Zimbábue", "Moçambique"],
-        answer: 2,
-        explanation: "Lesoto fica totalmente dentro da África do Sul.",
-        hint: "O país mais ao sul do continente africano.",
+        q: "Qual é o único país do mundo cujo território inclui o Polo Sul... por reivindicação, ao lado de outros seis?",
+        options: ["Brasil", "Argentina", "Canadá", "Japão", "Egito"],
+        answer: 1,
+        explanation: "A Argentina é um dos 7 países com reivindicações territoriais na Antártida (com Chile, Reino Unido, Noruega, França, Austrália e Nova Zelândia).",
+        hint: "É um vizinho do Brasil que fica bem ao sul.",
       },
       {
         q: "Qual destes países é duplamente sem litoral (cercado só por países sem litoral)?",
@@ -388,11 +388,11 @@ export const PHASES: Phase[] = [
         hint: "Uma cidade nova, construída para ser capital.",
       },
       {
-        q: "Qual destes países tem três capitais?",
-        options: ["Bolívia", "África do Sul", "Suíça", "Holanda", "Malásia"],
+        q: "Qual é a capital do Uzbequistão?",
+        options: ["Samarcanda", "Tashkent", "Bucara", "Asgabate", "Bisqueque"],
         answer: 1,
-        explanation: "Pretória, Cidade do Cabo e Bloemfontein dividem as funções de capital.",
-        hint: "Um país do sul da África.",
+        explanation: "Tashkent é a capital. Samarcanda e Bucara são cidades históricas da Rota da Seda.",
+        hint: "É a maior cidade da Ásia Central.",
       },
       {
         q: "O rio Danúbio NÃO passa por qual destas capitais?",
